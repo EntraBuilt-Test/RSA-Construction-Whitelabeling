@@ -1,0 +1,812 @@
+:root {
+  --brand-red: #0056cc;
+  --brand-dark: #1f2933;
+  --bg: #f4f5f7;
+  --panel-bg: #ffffff;
+  --panel-bg-alt: #f8f9fb;
+  --border: #d9dde3;
+  --text: #1f2933;
+  --text-muted: #6b7280;
+  --green: #1b8a4c;
+  --amber: #b8860b;
+  --danger: #c1272d;
+  --sidebar-bg: #1f2933;
+  --sidebar-text: #cbd2d9;
+  --overlay: rgba(0, 0, 0, 0.4);
+  font-family: 'Inter', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+[data-theme='dark'] {
+  --bg: #14181d;
+  --panel-bg: #1c2128;
+  --panel-bg-alt: #232a33;
+  --border: #333c47;
+  --text: #e6e9ee;
+  --text-muted: #94a0b1;
+  --sidebar-bg: #0f1317;
+  --sidebar-text: #b7c0cc;
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+* { box-sizing: border-box; }
+
+/* Browsers don't apply the page font to form controls by default (they use a
+   system UI font instead), which was silently dropping Tamil glyphs in every
+   input/select/button/textarea - even though the same text renders fine in
+   plain text and the print view. This makes all form controls use the same
+   Tamil-capable font stack as the rest of the app. */
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+/* Any element that legitimately scrolls horizontally (tables, the sidebar
+   drawer, etc.) gets momentum scrolling too, applied narrowly rather than
+   globally so it doesn't affect unrelated overflow behavior. */
+.panel, .app-sidebar { -webkit-overflow-scrolling: touch; }
+
+.app-shell { min-height: 100vh; min-height: 100dvh; }
+.app-body { display: flex; min-height: 100vh; }
+
+/* ---- Sidebar (desktop: static left column; mobile: slide-in drawer) ---- */
+.app-sidebar {
+  width: 270px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  gap: 20px;
+  transition: width 0.16s ease;
+}
+.sidebar-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  padding: 0 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.brand-title { font-weight: 700; font-size: 15px; color: var(--brand-red); letter-spacing: 0.2px; white-space: nowrap; }
+.brand-sub { font-size: 11px; color: #9aa5b3; margin-top: 2px; }
+
+.collapse-toggle-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-left: 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sidebar-text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.collapse-toggle-btn:hover { background: rgba(255, 255, 255, 0.14); color: white; }
+.collapse-toggle-btn:focus-visible { outline: 2px solid var(--brand-red); outline-offset: 2px; }
+
+.tab-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.tab-link {
+  color: var(--sidebar-text);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.tab-link:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+.tab-link.active { background: var(--brand-red); color: white; }
+.tab-link:focus-visible { outline: 2px solid var(--brand-red); outline-offset: -2px; }
+
+.sidebar-footer { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 14px; }
+.sidebar-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.theme-toggle { flex: 1; text-align: center; }
+.lang-select {
+  padding: 7px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sidebar-text, white);
+  font-size: 12px;
+}
+/* The closed <select> can safely inherit the sidebar's dark styling above, but
+   the pop-open OPTIONS LIST is drawn by the OS/browser with its own default
+   background (almost always white), and some browsers let it inherit our
+   `color: white` from the trigger - producing invisible white-on-white rows.
+   Force explicit, always-readable colors on the options themselves so this
+   holds regardless of which app theme is active. */
+.lang-select option { color: #1f2933; background: #ffffff; }
+[data-theme='dark'] .lang-select option { color: #e6e9ee; background: #232a33; }
+.user-menu { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--sidebar-text); }
+
+/* ---- Collapsed sidebar (desktop only - toggle button + Ctrl/Cmd+B) ---- */
+.app-sidebar.collapsed { width: 68px; padding-left: 10px; padding-right: 10px; }
+.app-sidebar.collapsed .brand { padding: 0; align-items: center; }
+.app-sidebar.collapsed .brand-title { font-size: 13px; }
+.app-sidebar.collapsed .sidebar-top-row { flex-direction: column; align-items: center; gap: 10px; }
+.app-sidebar.collapsed .tab-link { text-align: center; padding: 10px 4px; letter-spacing: 0.5px; }
+.app-sidebar.collapsed .sidebar-controls { flex-direction: column; }
+.app-sidebar.collapsed .theme-toggle { font-size: 15px; padding: 6px; }
+.app-sidebar.collapsed .user-menu { justify-content: center; }
+
+/* Mobile top bar with hamburger - hidden on desktop */
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--sidebar-bg);
+  color: white;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.mobile-brand { font-weight: 700; font-size: 14px; color: var(--brand-red); }
+.hamburger-btn { display: flex; flex-direction: column; gap: 4px; background: none; border: none; padding: 6px; cursor: pointer; }
+.hamburger-btn span { display: block; width: 20px; height: 2px; background: white; border-radius: 2px; }
+.sidebar-backdrop { display: none; }
+
+.app-content { flex: 1; padding: 24px 32px; max-width: 1280px; margin: 0 auto; width: 100%; min-width: 0; }
+
+.page-title { font-size: 22px; margin: 0 0 16px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.page-loading { padding: 40px; text-align: center; color: var(--text-muted); }
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.panel h2 { font-size: 15px; margin: 0 0 12px; font-weight: 700; letter-spacing: 0.2px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+.stat-card:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); transform: translateY(-1px); }
+.stat-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--panel-bg-alt);
+  color: var(--brand-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat-body { min-width: 0; flex: 1; overflow-wrap: break-word; }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.stat-value { font-size: clamp(16px, 2.2vw, 22px); font-weight: 700; overflow-wrap: break-word; min-width: 0; }
+.stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.stat-brand .stat-value { color: var(--brand-red); }
+.stat-brand .stat-icon { background: rgba(0, 86, 204, 0.1); }
+.stat-warn .stat-value { color: var(--amber); }
+.stat-warn .stat-icon { background: rgba(184, 134, 11, 0.12); color: var(--amber); }
+.stat-danger .stat-value { color: var(--danger); }
+.stat-danger .stat-icon { background: rgba(193, 39, 45, 0.1); color: var(--danger); }
+.stat-ok .stat-value { color: var(--green); }
+.stat-ok .stat-icon { background: rgba(27, 138, 76, 0.1); color: var(--green); }
+
+/* ---- Dashboard charts (dependency-free inline SVG - no chart library) ---- */
+.chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; align-items: stretch; }
+.chart-panel-wide, .chart-panel-narrow { display: flex; flex-direction: column; }
+.chart-svg { width: 100%; height: auto; }
+.chart-bar { fill: var(--brand-red); transition: fill 0.15s ease; }
+.chart-bar:hover { fill: #004bb3; }
+.chart-axis-label { font-size: 9px; fill: var(--text-muted); }
+.donut-chart-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: center; }
+.donut-center-value { font-size: 15px; font-weight: 700; fill: var(--text); }
+.donut-center-label { font-size: 10px; fill: var(--text-muted); }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text); }
+.donut-legend-row { display: flex; align-items: center; gap: 8px; }
+.donut-legend-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+@media (max-width: 860px) {
+  .chart-grid { grid-template-columns: 1fr; }
+}
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+.data-table th, .data-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.data-table thead th { background: var(--panel-bg-alt); font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+.data-table tfoot td { font-weight: 700; }
+.empty-row { text-align: center; color: var(--text-muted); padding: 24px; }
+.row-low-stock { background: rgba(193, 39, 45, 0.08); }
+.txn-in { color: var(--green); font-weight: 600; }
+.txn-out { color: var(--danger); font-weight: 600; }
+
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.amount-cell { text-align: right; font-variant-numeric: tabular-nums; }
+/* Give the live-calculated Amount cell in the items table the same boxed
+   look as the editable qty/rate/date inputs beside it, even though it's a
+   read-only computed value (quantity x rate, or per-day rate x qty x days),
+   not an input - see computeItemAmount() in utils/itemAmount.js. */
+.items-table .amount-cell:not(.total-amount) {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-bg-alt);
+  vertical-align: middle;
+}
+.total-label { text-align: right; }
+.total-amount { color: var(--brand-red); font-size: 15px; }
+.danger-text { color: var(--danger); font-weight: 600; }
+
+.badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+.badge-paid { background: rgba(27, 138, 76, 0.15); color: var(--green); }
+.badge-pending { background: rgba(193, 39, 45, 0.12); color: var(--danger); }
+.badge-btn { background: none; border: none; cursor: pointer; padding: 0; }
+
+.btn { border: none; border-radius: 7px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: background-color 0.15s ease, filter 0.15s ease, transform 0.1s ease; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--brand-red); color: white; box-shadow: 0 2px 6px rgba(0, 86, 204, 0.25); }
+.btn-primary:hover { background: #004bb3; }
+.btn-ghost { background: var(--panel-bg-alt); color: var(--text); }
+.btn-ghost:hover { filter: brightness(0.95); }
+.btn-danger { background: rgba(193, 39, 45, 0.12); color: var(--danger); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.toolbar input, .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--panel-bg); color: var(--text); }
+
+.login-card .lang-select { background: var(--panel-bg); color: var(--text); border: 1px solid var(--border); align-self: flex-end; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.form-field-wide { grid-column: 1 / -1; }
+.form-field label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.form-field input, .form-field select { padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--panel-bg); color: var(--text); }
+.field-hint { font-size: 11.5px; }
+.field-hint-error { color: var(--danger, #dc2626); }
+.vehicle-photo-preview { width: 180px; height: 130px; object-fit: cover; border: 1px solid var(--border); border-radius: 6px; }
+.vehicle-photo-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 4px 0 16px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.vehicle-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.vehicle-photo-thumb-link { display: inline-block; }
+.vehicle-photo-thumb-link img { width: 90px; height: 64px; object-fit: cover; border: 1px solid var(--border); border-radius: 6px; }
+.btn-photo-capture {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+  line-height: 1.25;
+  min-height: 38px;
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.btn-photo-capture:hover { filter: brightness(0.97); }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.customer-block { border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); padding: 16px 0; margin-bottom: 16px; }
+.toggle-row { display: flex; gap: 20px; margin-bottom: 12px; font-size: 13px; flex-wrap: wrap; }
+
+.items-table input { border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; font-size: 13px; background: var(--panel-bg); color: var(--text); }
+.item-name-cell { min-width: 220px; }
+/* Fixed (non-custom) Particulars rows show the item name as plain read-only
+   text instead of an input, so the full bilingual label is always visible on
+   page load with no click/focus needed (FR-05). */
+.item-name-display { display: block; padding: 6px 8px; font-size: 13px; color: var(--text); line-height: 1.35; }
+.amount-display { font-size: 13px; color: var(--text-muted); margin: 8px 0 0; }
+
+.alert { padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+.alert-error { background: rgba(193, 39, 45, 0.1); color: var(--danger); border: 1px solid rgba(193, 39, 45, 0.3); }
+
+.modal-overlay { position: fixed; inset: 0; background: var(--overlay); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.modal-box { background: var(--panel-bg); color: var(--text); border-radius: 10px; padding: 20px; width: 340px; max-width: 100%; max-height: 90vh; overflow-y: auto; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+.login-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background-image: linear-gradient(
+      rgba(15, 23, 42, 0.45), 
+      rgba(15, 23, 42, 0.45)
+    ),
+    url('../logo/Steel_and_glass_building_frame_202607311753 - Edited.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.login-card {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #ffffff;
+  padding: 32px;
+  border-radius: 14px;
+  width: 320px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .login-card {
+  background: rgba(20, 24, 29, 0.32);
+}
+.login-brand-mark { width: 56px; height: 56px; color: var(--brand-red); align-self: center; margin: 4px 0; }
+.login-card h1 { color: #60a5fa; font-size: 20px; margin: 0; text-align: center; }
+.login-sub { text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 12px; margin: 0 0 10px; }
+.login-card label { font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.8) !important; }
+.login-card input { padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-bg); color: var(--text); }
+.login-card button { margin-top: 10px; }
+
+.report-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.report-tabs .tab-link { background: var(--panel-bg-alt); color: var(--text); width: auto; }
+.report-tabs .tab-link.active { background: var(--brand-red); color: white; }
+
+.ledger-title { text-align: center; font-size: 16px; }
+
+/* ---- Mobile (<= 860px): sidebar becomes a slide-in drawer ---- */
+@media (max-width: 860px) {
+  .mobile-topbar { display: flex; }
+  .app-body { flex-direction: column; }
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+  .app-sidebar.open { transform: translateX(0); }
+  /* The desktop collapse/expand toggle is a desktop-only convenience; on the
+     mobile drawer always show the full sidebar with labels, regardless of
+     whatever collapsed state was saved from a desktop session. */
+  .app-sidebar.collapsed { width: 240px; padding-left: 16px; padding-right: 16px; }
+  .app-sidebar.collapsed .brand { align-items: flex-start; }
+  .app-sidebar.collapsed .brand-title { font-size: 16px; }
+  .app-sidebar.collapsed .sidebar-top-row { flex-direction: row; align-items: flex-start; }
+  .app-sidebar.collapsed .tab-link { text-align: left; padding: 10px 12px; }
+  .app-sidebar.collapsed .sidebar-controls { flex-direction: row; }
+  .app-sidebar.collapsed .theme-toggle { font-size: 13px; padding: 9px 16px; }
+  .app-sidebar .collapse-toggle-btn { display: none; }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    z-index: 55;
+  }
+  .app-content { padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .form-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Respect the notch/status-bar area on phones - the topbar sits under it
+     otherwise when the app is added to the home screen (standalone mode). */
+  .mobile-topbar {
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
+  }
+  .app-sidebar {
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding-left: calc(16px + env(safe-area-inset-left));
+  }
+
+  /* iOS Safari auto-zooms the page when focusing an input/select with a
+     computed font-size under 16px - jarring on a "real app" feeling
+     interface. Bump form controls to 16px only at this breakpoint so the
+     desktop layout (which has room to be denser) is unaffected. */
+  .form-field input,
+  .form-field select,
+  .form-field textarea,
+  .toolbar input,
+  .toolbar select,
+  .items-table input,
+  .items-table select,
+  .login-card input,
+  .chat-input-row input {
+    font-size: 16px;
+  }
+
+  /* Bigger, thumb-friendly tap targets throughout on phones, not just the
+     row-action buttons already covered at the 480px breakpoint below. */
+  .btn { min-height: 40px; }
+  .tab-link { padding: 12px; font-size: 14px; }
+  .badge-btn { padding: 4px; }
+}
+
+/* ---- Intermediate breakpoint: between the 860px sidebar-drawer switch and
+   the 640px single-column collapse, small tablets land here - grids go to
+   2-up instead of jumping straight to 1-up. ---- */
+@media (max-width: 600px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .login-card { padding: 22px; }
+
+  /* Touch targets: row-action buttons (Edit/Delete/Print) get a taller hit
+     area on phones instead of the compact desktop .btn-sm sizing. */
+  .row-actions .btn {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+
+/* ---- Stacked card layout for wide data tables on phones ----
+   Opt-in via .stack-on-mobile (added to the Delivery Note items table,
+   Material Ledger, and Labour Site Sheet/Consolidated tables) rather than
+   every .data-table, since some lists (e.g. short 3-4 column ones) read
+   fine with plain horizontal scroll and don't need the row->card rewrite.
+   Each <td> supplies its column header via a data-label attribute, shown
+   as a pseudo-header above the value.
+   Breakpoint is 640px rather than 480px: many current Android phones report
+   a CSS logical viewport width above 480px (some in the 500-600px range),
+   which would otherwise fall through to the desktop horizontal-scroll
+   table layout despite being a phone in every practical sense. */
+@media (max-width: 640px) {
+  .stack-on-mobile thead { display: none; }
+  .stack-on-mobile, .stack-on-mobile tbody, .stack-on-mobile tr, .stack-on-mobile td {
+    display: block;
+    width: 100%;
+  }
+  .stack-on-mobile tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .stack-on-mobile td {
+    border-bottom: none;
+    padding: 6px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .stack-on-mobile td[data-label]::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+  }
+  .stack-on-mobile td input,
+  .stack-on-mobile td select {
+    width: auto;
+    max-width: 60%;
+    min-width: 0;
+  }
+  .stack-on-mobile tfoot { display: block; }
+  .stack-on-mobile tfoot tr { display: block; }
+  .stack-on-mobile tfoot td { display: flex; justify-content: space-between; }
+
+  /* Columns that carry a desktop min-width (so the table reads well when
+     wide) must give that up once stacked into cards - otherwise a single
+     cell can force the whole card, and the page, wider than the phone's
+     screen, defeating the point of stacking in the first place. */
+  .stack-on-mobile .item-name-cell { min-width: 0; }
+
+  /* Multi-button action cells (Edit/Print/Delete, etc.) rarely fit next to
+     their label on a phone-width card. Force them onto their own full-width
+     line below the label instead of letting them get clipped or force a
+     horizontal scrollbar. */
+  .stack-on-mobile td .row-actions,
+  .stack-on-mobile td.row-actions {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+
+  /* Belt-and-suspenders: nothing inside a stacked card should be able to
+     force the card (and therefore the page) wider than the viewport. */
+  .stack-on-mobile td,
+  .stack-on-mobile td * {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+}
+
+/* ---- Floating AI assistant widget (bottom-right) ---- */
+.chat-widget { position: fixed; right: 20px; bottom: 20px; z-index: 70; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.chat-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand-red);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.chat-fab:hover { transform: scale(1.06); background: #a41f24; }
+.chat-fab-close { font-size: 26px; line-height: 1; }
+.chat-panel {
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  height: 420px;
+  max-height: calc(100vh - 120px);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat-panel-header {
+  background: var(--sidebar-bg);
+  color: white;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-close-btn { background: none; border: none; color: white; font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 6px; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.chat-bubble { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
+.chat-bubble-user { align-self: flex-end; background: var(--brand-red); color: white; border-bottom-right-radius: 3px; }
+.chat-bubble-assistant { align-self: flex-start; background: var(--panel-bg-alt); color: var(--text); border-bottom-left-radius: 3px; }
+.chat-bubble-typing { font-weight: 700; letter-spacing: 2px; }
+.chat-error { margin: 0 12px 10px; }
+.chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.chat-input-row input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--panel-bg); color: var(--text); }
+.chat-header-actions { display: flex; align-items: center; gap: 4px; }
+.chat-icon-btn { background: none; border: none; color: white; font-size: 15px; line-height: 1; cursor: pointer; padding: 2px 4px; opacity: 0.7; }
+.chat-icon-btn-active, .chat-icon-btn:hover { opacity: 1; }
+.chat-bubble { position: relative; }
+.chat-bubble-speak-btn { background: none; border: none; cursor: pointer; font-size: 11px; opacity: 0.55; margin-left: 6px; padding: 0; vertical-align: middle; }
+.chat-bubble-speak-btn:hover { opacity: 1; }
+.chat-mic-btn {
+  border: 1px solid var(--border);
+  background: var(--panel-bg-alt);
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+.chat-mic-btn-listening { background: var(--brand-red); border-color: var(--brand-red); animation: chat-mic-pulse 1.2s ease-in-out infinite; }
+@keyframes chat-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 34, 41, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(196, 34, 41, 0); }
+}
+
+@media (max-width: 480px) {
+  .chat-widget {
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .chat-panel { width: calc(100vw - 24px); max-height: calc(100vh - 120px - env(safe-area-inset-bottom)); }
+}
+
+/* Item 6: table + "Add Custom Item" + Cancel/Save share ONE scroll context,
+   separate from the outer .panel's own overflow-x: auto. Previously
+   .form-actions sized itself against the whole .panel's scrollable width
+   (which includes the narrower 6-field row above), so its flex-end
+   buttons could land under the middle of the table rather than its true
+   right edge once the table was scrolled. Inside this dedicated wrapper,
+   .form-actions is a sibling of the table within the SAME scrolling box,
+   so it takes on the table's actual content width and "Cancel"/"Save"
+   correctly track the table's right edge (the Amount column) at any
+   scroll position. */
+.items-scroll-area { overflow-x: auto; }
+.items-scroll-area .form-actions { margin-top: 12px; }
+
+/* Item 2: breathing room between the "Tip: leave Per-Day Rate blank..." note
+   and the items table below it. */
+.particulars-tip { margin-bottom: 12px; }
+
+/* Item 5: .data-table's width:100% (needed elsewhere, for tables that
+   should fill their panel) was also stretching the items-table to fill the
+   full .panel width even when its actual columns add up to less than
+   that - browsers distribute the leftover space into blank gaps rather
+   than making the table narrower, most visibly right after the Amount
+   column and before the (deliberately narrow, 60px) delete-button column.
+   Overriding back to auto-width here makes the table exactly as wide as
+   its real content - no dead space - while .panel's existing
+   overflow-x: auto still kicks in normally if the columns (plus any
+   Superadmin-configured extra columns) genuinely need more width than the
+   viewport provides. */
+.items-table { width: auto; min-width: 0; }
+.items-table th:last-child, .items-table td:last-child { width: 60px; }
+
+/* Item 4: center every items-table column header, including the 2-line
+   wrapped ones (e.g. "PER-DAY RATE"), and keep them vertically centered. */
+.items-table thead th {
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* Quantity/Rate/Per-Day Rate/Monthly Rate boxes: a comfortable fixed width
+   that reliably fits a normal typed value in full. An earlier attempt at
+   "shrink to fit content" (via field-sizing: content) actually clipped
+   values instead - the computed content-width didn't correctly account for
+   the number input's spinner arrows, so a value like "1500" would render
+   partially cut off. Prioritizing "always fully visible" over "minimal
+   footprint" here. */
+.items-table input {
+  width: 100%;
+  min-width: 70px;
+  max-width: 100%;
+}
+/* The item-name input holds free text and needs more room than a short
+   number box. */
+.items-table .item-name-cell input { width: 100%; min-width: 0; }
+
+/* Item 7: the Amount cell's "boxed, input-like" look now lives on an inner
+   <span class="amount-box"> instead of directly on the <td>. Putting the
+   border/radius/background on the td itself meant that, with a variable
+   number of Superadmin-configured extra columns between Date Returned and
+   Amount, the Amount cell's own independent box border could visually seam
+   against whatever plain (border-bottom-only) cell sat beside it. Moving the
+   box styling inside the cell's content means the <td> boundary itself stays
+   a normal, borderless table cell (consistent regardless of how many extra
+   columns exist), and the "boxed" look is purely a floating chip inside it. */
+.items-table .amount-cell:not(.total-amount) { border: none; background: none; padding: 6px 4px; }
+.items-table .amount-box {
+  display: inline-block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-bg-alt);
+  padding: 6px 8px;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+/* Item 8: dropdowns/short fields (Payment Status, Payment Mode) shouldn't
+   look empty/oversized relative to their text - size them to their content
+   within the grid cell instead of always stretching to the full column
+   width, while keeping the grid's own column tracks (and therefore row
+   alignment with neighboring fields) unchanged. */
+.form-field select {
+  width: fit-content;
+  min-width: 140px;
+  max-width: 100%;
+}
+
+/* Item 9: Date / Vehicle Number / Vehicle Photo / Receiver Photo / Payment
+   Status / Payment Mode all live in one .form-grid.form-grid-6. At typical
+   desktop widths the shared .form-grid minmax(200px, 1fr) track means 6
+   columns don't fit one row (200px x 6 > most desktop viewports), so they
+   wrap 4-then-2. Give this specific row a lower minmax basis on wide
+   screens so all 6 fit in one row, while still falling back to the existing
+   responsive stacking below (the 860px/640px .form-grid rules already
+   collapse it to 1 column on mobile - unaffected by this override, since
+   this rule only applies at 1200px+). */
+/* Raised from 1200px: at 1200-1300px, six equal columns only leave ~200px
+   each once gaps are subtracted - not enough room for "Capture / Upload
+   Photo" plus its camera emoji, or the Vehicle Number field's calendar
+   icon, to stay on one line without visibly overflowing their box border at
+   100%+ browser zoom (zoom effectively shrinks the logical viewport, so a
+   1366px laptop screen at 110% zoom behaves like ~1240px - just barely
+   inside the old threshold, which is exactly why it broke on laptop-width
+   screens specifically). 1400px leaves each column meaningfully wider.
+   The .btn-photo-capture wrap-to-two-lines fix above is the real backstop
+   though - even if a column ever does end up tight, the label wraps
+   instead of spilling past the box edge, at any zoom level. */
+@media (min-width: 1400px) {
+  .form-grid-6 { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Item 10: vehicle + receiver photo previews sit side-by-side instead of
+   stacked, each keeping its own internal column layout (thumbnail, then
+   action buttons) via the existing .vehicle-photo-block rule. */
+.vehicle-photo-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.vehicle-photo-row .vehicle-photo-block { flex: 1 1 220px; margin: 4px 0; }
+
+/* Items 1 & 2 (round 3 fixes): Date and Vehicle Number were stretching to
+   fill their full grid-column width even after the 6-field row was
+   narrowed - much wider than "08-08-2026" or "TN49CH8736" actually need.
+   Dedicated classes here (not a change to the shared .form-field input
+   rule) so no other field in the app is affected. */
+.date-field-compact { max-width: 150px; }
+.vehicle-number-compact { max-width: 180px; }
+/* ---- DateInputDMY: SINGLE-box DD/MM/YYYY date entry ----
+   Rewritten (round 5) to drop the previous position:absolute/relative
+   overlay technique entirely - see the long comment at the top of
+   DateInputDMY.jsx for why. This version is a completely normal in-flow
+   text input plus a small calendar button; the actual native date input
+   is pushed off-screen via inline styles in the component itself (not
+   here), so it can't be affected by anything in this stylesheet. */
+.date-single {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-bg);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.date-single-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.date-single-text:focus { outline: none; }
+.date-single-icon-btn {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1;
+}
+.date-single-icon-btn:hover { color: var(--text); }
+@media (max-width: 640px) {
+  /* iOS Safari zoom-on-focus prevention (see the mobile hardening rule for
+     .form-field input) - this is the field that actually receives focus. */
+  .date-single-text { font-size: 16px; }
+}
