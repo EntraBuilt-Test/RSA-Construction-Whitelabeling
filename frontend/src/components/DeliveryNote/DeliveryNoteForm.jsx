@@ -683,7 +683,7 @@ export default function DeliveryNoteForm() {
       const uploadResult = await uploadPromise;
 
       if (!name && !address) {
-        setAadhaarError('Load the Aadhaar card again.');
+        setAadhaarError("Couldn't read the card automatically — please fill in the details below manually.");
         return;
       }
 
@@ -703,7 +703,7 @@ export default function DeliveryNoteForm() {
           : {}),
       }));
     } catch (err) {
-      setAadhaarError('Load the Aadhaar card again.');
+      setAadhaarError("Couldn't read the card automatically — please fill in the details below manually.");
     } finally {
       setScanningAadhaar(false);
     }
@@ -1018,13 +1018,16 @@ export default function DeliveryNoteForm() {
                   >
                     📷 Scan Aadhaar
                   </button>
-                  {aadhaarError && <span className="field-hint field-hint-error">{aadhaarError}</span>}
+                  {aadhaarError && <span className="field-hint">{aadhaarError}</span>}
                 </div>
                 <div className="form-field">
                   <label>{t('deliveryForm.customerName')}</label>
                   <input
                     value={newCustomer.name}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    onChange={(e) => {
+                      setNewCustomer({ ...newCustomer, name: e.target.value });
+                      if (aadhaarError) setAadhaarError('');
+                    }}
                     required
                   />
                 </div>
@@ -1034,7 +1037,10 @@ export default function DeliveryNoteForm() {
                     value={newCustomer.phone}
                     maxLength={13}
                     placeholder="9876543210"
-                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: sanitizePhoneInput(e.target.value) })}
+                    onChange={(e) => {
+                      setNewCustomer({ ...newCustomer, phone: sanitizePhoneInput(e.target.value) });
+                      if (aadhaarError) setAadhaarError('');
+                    }}
                     required
                   />
                   {newCustomer.phone && !isValidPhone(newCustomer.phone) && (
@@ -1045,7 +1051,10 @@ export default function DeliveryNoteForm() {
                   <label>{t('deliveryForm.customerAddress')}</label>
                   <input
                     value={newCustomer.address}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                    onChange={(e) => {
+                      setNewCustomer({ ...newCustomer, address: e.target.value });
+                      if (aadhaarError) setAadhaarError('');
+                    }}
                   />
                 </div>
               </div>
