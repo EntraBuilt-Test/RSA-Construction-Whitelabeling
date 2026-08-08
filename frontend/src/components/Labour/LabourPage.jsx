@@ -479,8 +479,8 @@ function DailyEntryTab({ workers, loadingWorkers, sites, onPosted, t }) {
               </span>
             )}
             {logLocation && !resolvingAddress && typeof logLocation.accuracy === 'number' && logLocation.accuracy > LOW_ACCURACY_WARNING_M && (
-              <span className="field-hint field-hint-error">
-                Location accuracy is low (±{Math.round(logLocation.accuracy)}m) - try again outdoors, away from buildings, for a more precise reading.
+              <span className="field-hint">
+                Approximate location (±{Math.round(logLocation.accuracy)}m). For a precise GPS fix, use a phone with Location Services on, outdoors.
               </span>
             )}
           </div>
